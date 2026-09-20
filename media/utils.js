@@ -534,7 +534,7 @@ function updateScopeIndicatorDots(container, variableName, scopeSource) {
  * @param {*} value
  */
 function saveUiPreference(key, value) {
-  vscode.postMessage({ type: "saveUiPreference", payload: { key, value } });
+  sendMessage({ type: "saveUiPreference", payload: { key, value } });
 }
 
 /**
@@ -985,7 +985,7 @@ function bindCmdTitleLinks() {
       e.preventDefault();
       const url = link.dataset.url;
       if (url) {
-        vscode.postMessage({ type: "openExternalUrl", payload: { url } });
+        sendMessage({ type: "openExternalUrl", payload: { url } });
       }
     });
   });
@@ -1022,7 +1022,7 @@ function getFavoriteScope(commandId) {
  * Saves favorites to the extension.
  */
 function persistFavorites(payload) {
-  vscode.postMessage({ type: "saveFavorites", payload });
+  sendMessage({ type: "saveFavorites", payload });
 }
 
 // ─── Persist Helpers ──────────────────────────────────────────────────────────
@@ -1030,7 +1030,7 @@ function persistFavorites(payload) {
 function persistDataThenRender(successMessage) {
   uiState.pendingSaveMessage = successMessage;
   render();
-  vscode.postMessage({ type: "saveData", payload: state.data });
+  sendMessage({ type: "saveData", payload: state.data });
 }
 
 /**
@@ -1049,7 +1049,7 @@ function persistWorkspaceCommandsThenRender(successMessage) {
     uiState.pendingSaveMessage = successMessage;
   }
   render();
-  vscode.postMessage({ type: "saveWorkspaceCommandsData", payload: state.workspaceCommands });
+  sendMessage({ type: "saveWorkspaceCommandsData", payload: state.workspaceCommands });
 }
 
 /**
@@ -1073,7 +1073,7 @@ function persistWorkspaceOperation(op, successMessage) {
     uiState.pendingSaveMessage = successMessage;
   }
   render();
-  vscode.postMessage({ type: "applyOperation", payload: { scope: "workspace", op } });
+  sendMessage({ type: "applyOperation", payload: { scope: "workspace", op } });
 }
 
 /**
@@ -1089,7 +1089,7 @@ function persistGlobalOperation(op, successMessage) {
     uiState.pendingSaveMessage = successMessage;
   }
   render();
-  vscode.postMessage({ type: "applyOperation", payload: { scope: "global", op } });
+  sendMessage({ type: "applyOperation", payload: { scope: "global", op } });
 }
 
 /**
@@ -1110,7 +1110,7 @@ function persistCommandMoveThenRender(command, direction, successMessage) {
     uiState.pendingSaveMessage = successMessage;
   }
   render();
-  vscode.postMessage({
+  sendMessage({
     type: "saveCommandMove",
     payload: { command, direction },
   });
@@ -1118,7 +1118,7 @@ function persistCommandMoveThenRender(command, direction, successMessage) {
 
 function persistCommandVariables() {
   const payload = buildCommandVariablesPayload();
-  vscode.postMessage({ type: "saveCommandVariables", payload });
+  sendMessage({ type: "saveCommandVariables", payload });
 }
 
 // ─── Actions Cell Renderer ────────────────────────────────────────────────────

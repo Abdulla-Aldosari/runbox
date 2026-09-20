@@ -38,6 +38,10 @@ window.addEventListener("message", function (event) {
     return;
   }
 
+  // Any valid message from the extension proves the connection is still alive.
+  // Re-arm the disconnection watchdog (or dismiss the connection-lost modal).
+  resetConnectionWatchdog();
+
   if (message.type === "state") {
     hydrateState(message.payload);
     ensureSelectionDefaults();
@@ -58,7 +62,7 @@ window.addEventListener("message", function (event) {
         "error"
       );
       // Rollback optimistic render — reload authoritative state from disk
-      vscode.postMessage({ type: "requestState" });
+      sendMessage({ type: "requestState" });
     }
     // Page is already rendered by persistDataThenRender() — just append the notice to document.body (outside #app, survives render)
     paintNotice();
@@ -85,7 +89,7 @@ window.addEventListener("message", function (event) {
         "error"
       );
       // Rollback optimistic render — reload authoritative state from disk
-      vscode.postMessage({ type: "requestState" });
+      sendMessage({ type: "requestState" });
     }
     paintNotice();
     return;
@@ -103,7 +107,7 @@ window.addEventListener("message", function (event) {
         icons.circleX,
         "error"
       );
-      vscode.postMessage({ type: "requestState" });
+      sendMessage({ type: "requestState" });
     }
     paintNotice();
     return;
@@ -162,7 +166,7 @@ window.addEventListener("message", function (event) {
           aiState.modelsLoading = false;
         } else {
           aiState.modelsLoading = true;
-          vscode.postMessage({ type: "aiListModels", payload: { providerName } });
+          sendMessage({ type: "aiListModels", payload: { providerName } });
         }
       } else {
         aiState.modelsLoading = false;
@@ -175,7 +179,7 @@ window.addEventListener("message", function (event) {
   if (message.type === "aiSaveSettingsResult") {
     if (message.payload && message.payload.success) {
       // Re-fetch settings to refresh keyStatus
-      vscode.postMessage({ type: "aiGetSettings" });
+      sendMessage({ type: "aiGetSettings" });
       showNotice("AI settings saved.", icons.circleCheck, "success");
     } else {
       showNotice(
@@ -191,7 +195,7 @@ window.addEventListener("message", function (event) {
   if (message.type === "aiDeleteKeyResult") {
     if (message.payload && message.payload.success) {
       clearModelsCache(aiState.settingsProviderName);
-      vscode.postMessage({ type: "aiGetSettings" });
+      sendMessage({ type: "aiGetSettings" });
       showNotice("API key removed.", icons.circleCheck, "success");
     } else {
       showNotice(

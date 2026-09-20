@@ -549,7 +549,7 @@ function dispatchCommandAction(commandId, action, shellPath, shellName, activeFs
   const resolved = resolveCommandTemplate(command);
   const commandVariables = buildCommandVariablesPayload();
 
-  vscode.postMessage({
+  sendMessage({
     type: "performAction",
     payload: {
       action,
@@ -1011,7 +1011,7 @@ function bindCommandActionButtons() {
         e.preventDefault();
         const varName = input.dataset.variableName;
         if (!varName || input.readOnly) return;
-        vscode.postMessage({ type: "pickFile", payload: { variableName: varName } });
+        sendMessage({ type: "pickFile", payload: { variableName: varName } });
       }
     });
   });

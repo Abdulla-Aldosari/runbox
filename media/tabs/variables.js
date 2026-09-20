@@ -97,7 +97,7 @@ function bindVariablesTabEvents() {
       }
       newSettings[varName].enabled = checkbox.checked;
       state.autoVariablesSettings = newSettings;
-      vscode.postMessage({
+      sendMessage({
         type: "saveAutoVariablesSettings",
         payload: newSettings,
       });
@@ -144,7 +144,7 @@ function bindVariablesTabEvents() {
       }
       newSettings["date"].config.format = selectedFormat;
       state.autoVariablesSettings = newSettings;
-      vscode.postMessage({
+      sendMessage({
         type: "saveAutoVariablesSettings",
         payload: newSettings,
       });

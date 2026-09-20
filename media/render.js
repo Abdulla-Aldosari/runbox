@@ -265,6 +265,7 @@ function render() {
       ${renderVariableInputModal()}
       ${renderRunConfirmModal()}
       ${renderDeleteConfirmModal()}
+      ${renderConnectionLostModal()}
       ${favoriteModalState.visible ? renderFavoriteModal() : ""}
       ${unfavoriteConfirmState.visible ? renderUnfavoriteConfirmModal() : ""}
       ${editConflictState.visible ? renderEditConflictModal() : ""}
@@ -499,26 +500,26 @@ function bindTopActions() {
 
   if (openCommandsFileButton) {
     openCommandsFileButton.addEventListener("click", function () {
-      vscode.postMessage({ type: "openCommandsFile" });
+      sendMessage({ type: "openCommandsFile" });
     });
   }
 
   if (openGlobalDataFileButton) {
     openGlobalDataFileButton.addEventListener("click", function () {
-      vscode.postMessage({ type: "openGlobalDataFile" });
+      sendMessage({ type: "openGlobalDataFile" });
     });
   }
 
   if (openLocalDataFileButton) {
     openLocalDataFileButton.addEventListener("click", function () {
-      vscode.postMessage({ type: "openLocalDataFile" });
+      sendMessage({ type: "openLocalDataFile" });
     });
   }
 
   // Workspace folder selector — only present in multi-root workspaces
   if (state.workspaceFolders.length > 1) {
     bindCustomSelect("workspace-folder-select", "workspace-folder-btn", "workspace-folder-menu", function (fsPath) {
-      vscode.postMessage({ type: "setActiveWorkspaceFolder", payload: { fsPath } });
+      sendMessage({ type: "setActiveWorkspaceFolder", payload: { fsPath } });
     });
   }
 }

@@ -869,7 +869,7 @@ function bindEditConflictModalEvents() {
       // Reload authoritative state from disk — this window's optimistic edit
       // to the command (applied in place by submitEditCommand) is discarded
       // in favor of whatever the other window actually saved.
-      vscode.postMessage({ type: "requestState" });
+      sendMessage({ type: "requestState" });
       render();
     });
   }

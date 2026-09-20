@@ -233,7 +233,7 @@ function bindAiGenerateEvents() {
       aiState.view = "settings";
       aiState.apiKeyInput = "";
       // Fetch current settings from extension
-      vscode.postMessage({ type: "aiGetSettings" });
+      sendMessage({ type: "aiGetSettings" });
     });
   }
 
@@ -246,7 +246,7 @@ function bindAiGenerateEvents() {
       aiState.prompt = "";
       aiState.error = "";
       // Fetch current settings so providerName is always up-to-date before rendering
-      vscode.postMessage({ type: "aiGetSettings" });
+      sendMessage({ type: "aiGetSettings" });
     });
   }
 
@@ -265,7 +265,7 @@ function bindAiGenerateEvents() {
       aiState.prompt = "";
       aiState.error = "";
       // Fetch current settings so providerName is always up-to-date before rendering
-      vscode.postMessage({ type: "aiGetSettings" });
+      sendMessage({ type: "aiGetSettings" });
     });
   }
 
@@ -322,17 +322,20 @@ function bindAiGenerateEvents() {
         aiState.view = "loading";
         render();
 
-        vscode.postMessage({
-          type: "aiGenerate",
-          payload: {
-            mode: aiState.mode,
-            prompt: promptValue,
-            categoryId: aiState.categoryId,
-            groupId: aiState.groupId,
-            shellName: aiState.shellName,
-            shellPath: aiState.shellPath,
+        sendMessage(
+          {
+            type: "aiGenerate",
+            payload: {
+              mode: aiState.mode,
+              prompt: promptValue,
+              categoryId: aiState.categoryId,
+              groupId: aiState.groupId,
+              shellName: aiState.shellName,
+              shellPath: aiState.shellPath,
+            },
           },
-        });
+          { timeout: 30000 }
+        );
       });
     }
 
@@ -343,7 +346,7 @@ function bindAiGenerateEvents() {
         aiState.returnToPrompt = true;
         aiState.view = "settings";
         aiState.apiKeyInput = "";
-        vscode.postMessage({ type: "aiGetSettings" });
+        sendMessage({ type: "aiGetSettings" });
       });
     }
 
@@ -491,7 +494,7 @@ function bindAiGenerateEvents() {
         // "Current Workspace" pseudo-category: route to the dedicated workspace-local
         // insert message instead of the regular category-based aiInsert.
         if (isCurrentWorkspaceCategory(aiState.categoryId)) {
-          vscode.postMessage({
+          sendMessage({
             type: "aiInsertWorkspace",
             payload: {
               mode: aiState.mode,
@@ -502,7 +505,7 @@ function bindAiGenerateEvents() {
           return;
         }
 
-        vscode.postMessage({
+        sendMessage({
           type: "aiInsert",
           payload: {
             mode: aiState.mode,

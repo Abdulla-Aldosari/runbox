@@ -154,4 +154,4 @@ document.addEventListener("contextmenu", function (e) {
 
 // ─── Initialization ────────────────────────────────────────────────────────────
 // Signal the extension that the webview is ready to receive state.
-vscode.postMessage({ type: "ready" });
+sendMessage({ type: "ready" });

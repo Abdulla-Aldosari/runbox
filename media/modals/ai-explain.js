@@ -25,7 +25,7 @@ function openAiExplainModal(command) {
   aiExplainState.error = "";
 
   _injectAiExplainModal();
-  vscode.postMessage({ type: "aiExplain", payload: { command } });
+  sendMessage({ type: "aiExplain", payload: { command } }, { timeout: 30000 });
 }
 
 /**

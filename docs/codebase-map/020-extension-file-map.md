@@ -15,6 +15,8 @@
 
 - `performAction` — `activeFsPath` comes from the webview payload directly (set by the run-confirm folder dropdown, not injected by the dispatch table).
 
+**Webview panel reconnect (`setupPanel` + `WebviewPanelSerializer`):** panel creation and message routing live in a single `setupPanel(targetPanel)` helper, shared by the `runBox.openPanel` command and `vscode.window.registerWebviewPanelSerializer("runBoxPanel", ...)`. When VS Code revives an already-open panel after the extension host restarts (for example after the computer resumes from sleep/hibernate, an extension update, or an unexpected host restart), the serializer reassigns the `panel` reference and calls `setupPanel()` to re-attach the message handler and push fresh state. This keeps the webview working instead of silently dropping every outgoing message.
+
 **VS Code setting:** `runBox.multiRootFolderResolution` controls how the active folder is resolved when the panel opens in a multi-root workspace. Values: `"remember"` (default — persists the user's last selection in `workspaceState`), `"followEditor"` (uses the active text editor's folder, falls back to `workspaceState`), `"alwaysFirst"` (always uses `workspaceFolders[0]`). Has no effect in single-folder workspaces.
 
 ## `lib/normalize.js`

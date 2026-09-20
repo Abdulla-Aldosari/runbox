@@ -832,6 +832,35 @@ td.actions-cell {
   min-width: 850px !important;
 }
 
+/* ===== Connection Lost Modal ===== */
+.connection-lost-box {
+  width: min(1300px, 96vw) !important;
+  max-height: 90vh;
+  justify-items: center;
+  text-align: center;
+  padding: 48px 32px;
+}
+
+.connection-lost-icon {
+  display: flex;
+  justify-content: center;
+  color: var(--runbox-textLink-foreground);
+}
+
+.connection-lost-icon svg {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+.connection-lost-box h3 {
+  font-size: 1.15rem;
+}
+
+.connection-lost-box .modal-description {
+  font-size: 0.95rem;
+  max-width: 560px;
+}
+
 .modal-box h3 {
   margin: 0;
   font-size: 0.95rem;

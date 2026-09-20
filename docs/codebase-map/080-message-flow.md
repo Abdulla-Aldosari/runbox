@@ -1,8 +1,8 @@
 # Message Flow — Webview ↔ Extension
 
-## Webview → Extension (`vscode.postMessage`)
+## Webview → Extension (`sendMessage()`)
 
-All `vscode.postMessage` calls are inlined at their call sites in tabs, modals, and `media/render.js`. There are no named sender functions.
+All outgoing messages are funneled through `sendMessage()` (`media/connection-watchdog.js`) instead of calling `vscode.postMessage` directly. `sendMessage()` forwards the message unchanged and arms a single shared disconnection watchdog timer: if no message arrives back from the extension within the timeout, a non-dismissible "Connection lost" modal is shown asking the user to close and reopen the panel. Any incoming message (see `resetConnectionWatchdog()` in `media/messages.js`) re-arms the timer and hides the modal.
 
 | `message.type` | Call site | Handler (in `lib/handlers.js`) |
 | - | - | - |

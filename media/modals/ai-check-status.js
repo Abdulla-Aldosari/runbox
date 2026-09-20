@@ -27,7 +27,7 @@ function openAiCheckConnectionModal(providerName, modelId) {
   aiCheckStatusState.error = "";
 
   _injectAiCheckStatusModal();
-  vscode.postMessage({ type: "aiCheckConnection", payload: { providerName, modelId } });
+  sendMessage({ type: "aiCheckConnection", payload: { providerName, modelId } });
 }
 
 /**
@@ -46,7 +46,7 @@ function openAiCheckRateLimitsModal(providerName, modelId) {
   aiCheckStatusState.error = "";
 
   _injectAiCheckStatusModal();
-  vscode.postMessage({ type: "aiCheckRateLimits", payload: { providerName, modelId } });
+  sendMessage({ type: "aiCheckRateLimits", payload: { providerName, modelId } });
 }
 
 /**
@@ -411,7 +411,7 @@ function _bindAiCheckStatusContentEvents() {
       e.preventDefault();
       var url = openUrlLink.dataset.url;
       if (url) {
-        vscode.postMessage({ type: "openExternalUrl", payload: { url } });
+        sendMessage({ type: "openExternalUrl", payload: { url } });
       }
     });
   }

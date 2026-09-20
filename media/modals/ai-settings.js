@@ -371,7 +371,7 @@ function bindAiSettingsEvents() {
             aiState.modelsLoading = false;
           } else {
             aiState.modelsLoading = true;
-            vscode.postMessage({ type: "aiListModels", payload: { providerName: newProvider } });
+            sendMessage({ type: "aiListModels", payload: { providerName: newProvider } });
           }
         } else {
           aiState.modelsLoading = false;
@@ -401,7 +401,7 @@ function bindAiSettingsEvents() {
         e.preventDefault();
         const url = getApiKeyLink.dataset.url;
         if (url) {
-          vscode.postMessage({ type: "openExternalUrl", payload: { url } });
+          sendMessage({ type: "openExternalUrl", payload: { url } });
         }
       });
     }
@@ -427,7 +427,7 @@ function bindAiSettingsEvents() {
         }
         const resolvedModelId = resolveSettingsModelId(aiState.settingsProviderName);
         clearModelsCache(aiState.settingsProviderName);
-        vscode.postMessage({
+        sendMessage({
           type: "aiSaveSettings",
           payload: {
             providerName: aiState.settingsProviderName,
@@ -454,7 +454,7 @@ function bindAiSettingsEvents() {
           if (aiState.apiKeyInput) {
             clearModelsCache(aiState.settingsProviderName);
           }
-          vscode.postMessage({
+          sendMessage({
             type: "aiSaveSettings",
             payload: {
               providerName: aiState.settingsProviderName,
@@ -487,7 +487,7 @@ function bindAiSettingsEvents() {
           return;
         }
         aiState.modelsLoading = true;
-        vscode.postMessage({ type: "aiRefreshAllModels" });
+        sendMessage({ type: "aiRefreshAllModels" });
         render();
       });
     }
@@ -497,7 +497,7 @@ function bindAiSettingsEvents() {
     if (deleteApiKeyBtn) {
       deleteApiKeyBtn.addEventListener("click", function () {
         clearModelsCache(aiState.settingsProviderName);
-        vscode.postMessage({ type: "aiDeleteKey", payload: { providerName: aiState.settingsProviderName } });
+        sendMessage({ type: "aiDeleteKey", payload: { providerName: aiState.settingsProviderName } });
       });
     }
 
@@ -545,7 +545,7 @@ function bindAiSettingsEvents() {
         e.preventDefault();
         const url = setupOpenUrlLink.dataset.url;
         if (url) {
-          vscode.postMessage({ type: "openExternalUrl", payload: { url } });
+          sendMessage({ type: "openExternalUrl", payload: { url } });
         }
       });
     }
