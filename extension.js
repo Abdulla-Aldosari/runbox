@@ -352,22 +352,17 @@ function activate(context) {
   // ─── Panel Setup ────────────────────────────────────────────────────────────────
   /**
    * Wires up a webview panel (HTML content, message dispatch table, dispose handler)
-   * and pushes the initial state. Shared by both the "open a brand-new panel" path
-   * (runBox.openPanel) and the "revive an existing panel after an extension host
-   * restart" path (registerWebviewPanelSerializer), so both produce an identically
-   * functioning panel.
+   * and pushes the initial state. Only called by runBox.openPanel, right after
+   * createWebviewPanel(), for a brand-new panel -- there is no panel-revival path
+   * (see the comment above runBox.openPanel's command registration for why).
+   * Kept as its own function purely for readability.
    * @param {import('vscode').WebviewPanel} targetPanel
    */
   async function setupPanel(targetPanel) {
-    // Revived panels (via registerWebviewPanelSerializer, after the extension host
-    // restarts, the window reloads, or VS Code itself restarts) do NOT retain the
-    // webview.options passed to the original createWebviewPanel() call -- they come
-    // back with scripts disabled by default. Without re-asserting enableScripts here,
-    // every <script> tag in the HTML below is silently blocked, so no JS ever runs,
-    // no "ready" message is ever sent, and the panel stays a blank black screen with
-    // an endless loading indicator (eventually "An error occurred while loading view").
-    // This is a no-op for a brand-new panel created by runBox.openPanel, since it's
-    // already the same value set at creation time.
+    // Re-asserts the same options already passed to createWebviewPanel() below. A
+    // harmless no-op today, kept only as a cheap safety net: if this project ever
+    // adds a panel-revival path back, a revived panel would come back with scripts
+    // disabled by default, silently blocking every <script> tag in the HTML below.
     targetPanel.webview.options = { enableScripts: true };
 
     targetPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, "media", "icon.png");
@@ -675,19 +670,23 @@ function activate(context) {
 
   context.subscriptions.push(openPanelCommand);
 
-  // Re-attaches the message handler and pushes fresh state when VS Code revives an
-  // already-open panel after an extension host restart (e.g. after the computer
-  // resumes from sleep, after an extension update, or after an unexpected host
-  // restart). Without this, the panel's DOM stays visible but every outgoing
-  // vscode.postMessage call from the webview is silently dropped.
-  context.subscriptions.push(
-    vscode.window.registerWebviewPanelSerializer("runBoxPanel", {
-      async deserializeWebviewPanel(webviewPanel) {
-        panel = webviewPanel;
-        await setupPanel(panel);
-      },
-    })
-  );
+  // Intentionally does NOT register a vscode.window.registerWebviewPanelSerializer
+  // for "runBoxPanel". VS Code's own webview-revival mechanism is currently unreliable
+  // across extension host restarts / window reloads (confirmed against VS Code 1.138.0
+  // stable and 1.139.0-insider): a revived panel frequently gets stuck as a permanently
+  // blank screen with an endless loading indicator instead of restoring correctly. See
+  // https://github.com/microsoft/vscode/issues/225410 (extension host restarts/crashes
+  // are not handled for webviews, no extension-facing API exists to detect it) and
+  // https://github.com/microsoft/vscode/pull/226069 (the fix for this, still open/
+  // unmerged as of VS Code 1.139.0-insider). Without a serializer, VS Code does not
+  // persist the panel across a reload at all, so it simply closes instead of coming
+  // back as an unrecoverable orphaned blank screen -- the user just reopens it via the
+  // command/status bar/keybinding, which always creates a clean new panel. The
+  // connection-watchdog heartbeat (media/connection-watchdog.js, "ping"/"pong" above)
+  // still covers the case where the panel's DOM survives a host restart while the
+  // extension side does not (e.g. certain host crash-recovery paths): it detects the
+  // dead connection and tells the user to close and reopen the panel, which is
+  // guaranteed to work since it always creates a brand-new panel via runBox.openPanel.
 
   // Status bar item shown on the right side of the VS Code status bar.
   // Clicking it triggers runBox.openPanel to open or focus the panel.

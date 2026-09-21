@@ -36,8 +36,7 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onStartupFinished",
-    "onWebviewPanel:runBoxPanel"
+    "onStartupFinished"
   ],
   "contributes": {
     "commands": [
