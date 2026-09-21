@@ -339,6 +339,17 @@ function activate(context) {
    * @param {import('vscode').WebviewPanel} targetPanel
    */
   async function setupPanel(targetPanel) {
+    // Revived panels (via registerWebviewPanelSerializer, after the extension host
+    // restarts, the window reloads, or VS Code itself restarts) do NOT retain the
+    // webview.options passed to the original createWebviewPanel() call -- they come
+    // back with scripts disabled by default. Without re-asserting enableScripts here,
+    // every <script> tag in the HTML below is silently blocked, so no JS ever runs,
+    // no "ready" message is ever sent, and the panel stays a blank black screen with
+    // an endless loading indicator (eventually "An error occurred while loading view").
+    // This is a no-op for a brand-new panel created by runBox.openPanel, since it's
+    // already the same value set at creation time.
+    targetPanel.webview.options = { enableScripts: true };
+
     targetPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, "media", "icon.png");
 
     // isDev is true only when running in Development mode AND the dev tools entry point
