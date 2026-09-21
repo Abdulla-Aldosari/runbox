@@ -12,6 +12,8 @@
 
 **`ping` / `pong` heartbeat:** the very first branch of the dispatch table replies to `{ type: "ping" }` with `{ type: "pong" }` immediately, with no dependency on any business state or file I/O. It backs the independent connection-watchdog heartbeat in `media/connection-watchdog.js`, which detects a silently dropped connection and is deliberately never coupled to business message replies (see `docs/codebase-map/080-message-flow.md`).
 
+**`onWebviewPanel:runBoxPanel` activation event (`package.json`):** required alongside `registerWebviewPanelSerializer("runBoxPanel", ...)` for the automatic-reconnect path to actually fire. `onStartupFinished` alone activates the extension at some point after VS Code starts, but VS Code only calls `deserializeWebviewPanel` on a still-open, orphaned panel if the extension declares `onWebviewPanel:<viewType>` in `activationEvents` for that exact `viewType`. Without it, the serializer registration inside `activate()` never gets the chance to run in time, the panel stays orphaned after an extension host restart, and the connection-watchdog heartbeat (`media/connection-watchdog.js`) eventually shows the "Connection lost" modal permanently instead of the panel silently reconnecting.
+
 **Multi-root message handling in the dispatch table:**
 
 - `setActiveWorkspaceFolder` — stores the user-selected folder path in `context.workspaceState` and calls `postState()` to refresh the webview.
