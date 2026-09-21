@@ -8,7 +8,7 @@
 // media/connection-watchdog.js
 // Independent heartbeat that detects a silently dropped extension host connection
 // (e.g. after the computer resumes from sleep, after an extension update, or after
-// an unexpected host restart) and surfaces a "Connection lost" modal to the user.
+// an unexpected host restart) and surfaces a "Service connection lost" modal to the user.
 //
 // Deliberately independent of all business message traffic (saveData, performAction,
 // etc.) — see the proposal doc for why coupling the detector to business replies
@@ -55,7 +55,7 @@ window.addEventListener("message", function (event) {
 });
 
 /**
- * Renders the "Connection lost" modal overlay, or "" when the connection is healthy.
+ * Renders the "Service connection lost" modal overlay, or "" when the connection is healthy.
  * Has no close/Cancel button and does not dismiss on outside click — it can only be
  * cleared by a successful "pong", since any button here would itself depend on the
  * broken postMessage channel.
@@ -70,8 +70,8 @@ function renderConnectionLostModal() {
     <div class="modal-overlay" id="connection-lost-overlay" data-dismiss-on-outside-click="false">
       <div class="modal-box connection-lost-box">
         <div class="connection-lost-icon">${icons.noConnectToHost}</div>
-        <h3>Connection lost</h3>
-        <p>RunBox stopped responding. Close this panel and open it again to restore the service.</p>
+        <h3>Service connection lost</h3>
+        <p>RunBox service stopped. Close this panel and open it again to restore the service.</p>
       </div>
     </div>
   `;
