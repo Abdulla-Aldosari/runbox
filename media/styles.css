@@ -1903,6 +1903,26 @@ input[type="checkbox"]:checked::after {
   overflow-y: auto;
 }
 
+/* Connection Lost modal */
+.connection-lost-box {
+  width: min(1300px, 96vw) !important;
+  padding: 48px !important;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.connection-lost-icon {
+  color: var(--vscode-errorForeground, var(--runbox-editor-foreground));
+}
+
+.connection-lost-icon svg {
+  width: 64px !important;
+  height: 64px !important;
+}
+
 /* AI Results table */
 .ai-results-table {
   min-width: 500px;

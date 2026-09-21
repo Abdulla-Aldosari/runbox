@@ -329,29 +329,17 @@ function activate(context) {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Registers the primary command that opens (or focuses) the RunBox panel.
-  const openPanelCommand = vscode.commands.registerCommand("runBox.openPanel", async function () {
-    // If the panel already exists, bring it to focus and refresh its state instead
-    // of creating a duplicate panel.
-    if (panel) {
-      panel.reveal(vscode.ViewColumn.One);
-      await postState(panel);
-      return;
-    }
-
-    // Runs once per session, only now that the user has actually opened the panel
-    // (see the comment above checkDuplicateShellProfiles's definition for why).
-    if (!hasCheckedDuplicateShellProfilesThisSession) {
-      hasCheckedDuplicateShellProfilesThisSession = true;
-      checkDuplicateShellProfiles();
-    }
-
-    panel = vscode.window.createWebviewPanel("runBoxPanel", "RunBox", vscode.ViewColumn.One, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-    });
-
-    panel.iconPath = vscode.Uri.joinPath(context.extensionUri, "media", "icon.png");
+  // ─── Panel Setup ────────────────────────────────────────────────────────────────
+  /**
+   * Wires up a webview panel (HTML content, message dispatch table, dispose handler)
+   * and pushes the initial state. Shared by both the "open a brand-new panel" path
+   * (runBox.openPanel) and the "revive an existing panel after an extension host
+   * restart" path (registerWebviewPanelSerializer), so both produce an identically
+   * functioning panel.
+   * @param {import('vscode').WebviewPanel} targetPanel
+   */
+  async function setupPanel(targetPanel) {
+    targetPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, "media", "icon.png");
 
     // isDev is true only when running in Development mode AND the dev tools entry point
     // exists on disk. Both conditions must be met to avoid injecting dev scripts in CI
@@ -383,12 +371,20 @@ function activate(context) {
     }
     // ─────────────────────────────────────────────────────────────────────────────
 
-    panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri, isDev, devModuleFiles);
+    targetPanel.webview.html = getWebviewHtml(targetPanel.webview, context.extensionUri, isDev, devModuleFiles);
 
-    panel.webview.onDidReceiveMessage(
+    targetPanel.webview.onDidReceiveMessage(
       async function (message) {
         // Guard: ignore malformed messages that lack a string type.
         if (!message || typeof message.type !== "string") {
+          return;
+        }
+
+        // Dedicated connection-watchdog heartbeat (media/connection-watchdog.js).
+        // Dependency-free and independent of business message traffic, so it
+        // always replies immediately regardless of any other in-flight work.
+        if (message.type === "ping") {
+          await panel.webview.postMessage({ type: "pong" });
           return;
         }
 
@@ -604,15 +600,59 @@ function activate(context) {
     );
 
     // Reset the panel reference when the user closes it, allowing a new one to be created
-    // on the next command invocation.
-    panel.onDidDispose(function () {
-      panel = null;
+    // on the next command invocation. Only clears the outer `panel` variable when this
+    // dispose event belongs to the panel currently tracked there, so a stale dispose
+    // from a superseded panel can never null out a newer, still-open one.
+    targetPanel.onDidDispose(function () {
+      if (panel === targetPanel) {
+        panel = null;
+      }
     });
 
-    await postState(panel);
+    await postState(targetPanel);
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Registers the primary command that opens (or focuses) the RunBox panel.
+  const openPanelCommand = vscode.commands.registerCommand("runBox.openPanel", async function () {
+    // If the panel already exists, bring it to focus and refresh its state instead
+    // of creating a duplicate panel.
+    if (panel) {
+      panel.reveal(vscode.ViewColumn.One);
+      await postState(panel);
+      return;
+    }
+
+    // Runs once per session, only now that the user has actually opened the panel
+    // (see the comment above checkDuplicateShellProfiles's definition for why).
+    if (!hasCheckedDuplicateShellProfilesThisSession) {
+      hasCheckedDuplicateShellProfilesThisSession = true;
+      checkDuplicateShellProfiles();
+    }
+
+    panel = vscode.window.createWebviewPanel("runBoxPanel", "RunBox", vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    });
+
+    await setupPanel(panel);
   });
 
   context.subscriptions.push(openPanelCommand);
+
+  // Re-attaches the message handler and pushes fresh state when VS Code revives an
+  // already-open panel after an extension host restart (e.g. after the computer
+  // resumes from sleep, after an extension update, or after an unexpected host
+  // restart). Without this, the panel's DOM stays visible but every outgoing
+  // vscode.postMessage call from the webview is silently dropped.
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer("runBoxPanel", {
+      async deserializeWebviewPanel(webviewPanel) {
+        panel = webviewPanel;
+        await setupPanel(panel);
+      },
+    })
+  );
 
   // Status bar item shown on the right side of the VS Code status bar.
   // Clicking it triggers runBox.openPanel to open or focus the panel.
@@ -646,6 +686,12 @@ function getWebviewHtml(webview, extensionUri, isDev = false, devModuleFiles = [
   const stateUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "media", "state.js"));
   const iconsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "media", "icons.js"));
   const utilsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "media", "utils.js"));
+
+  // 1a. Connection watchdog (independent heartbeat — only depends on icons and vscode,
+  // both already defined earlier)
+  const connectionWatchdogUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "connection-watchdog.js")
+  );
 
   // 1b. Markdown parser (utility — must load before ai-explain.js)
   const markdownParserUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "media", "markdown-parser.js"));
@@ -710,6 +756,7 @@ function getWebviewHtml(webview, extensionUri, isDev = false, devModuleFiles = [
   <script nonce="${nonce}" src="${stateUri}"></script>
   <script nonce="${nonce}" src="${iconsUri}"></script>
   <script nonce="${nonce}" src="${utilsUri}"></script>
+  <script nonce="${nonce}" src="${connectionWatchdogUri}"></script>
   <script nonce="${nonce}" src="${markdownParserUri}"></script>
 
   <!-- 2. Modals (must exist before tab renderers that reference renderCommandCard, etc.) -->
