@@ -66,6 +66,26 @@ function activate(context) {
 
   // ─── postState ────────────────────────────────────────────────────────────────
   /**
+   * Posts a message to a webview panel, silently swallowing the "Webview is
+   * disposed" error VS Code throws when the panel was closed while this call's
+   * caller was still awaiting async work (e.g. disk reads in collectAndPostState,
+   * or the connection-watchdog heartbeat racing a panel close). There is nothing
+   * useful to do in that case: the panel is gone and nothing is listening, so
+   * letting the error propagate unhandled would otherwise destabilize the entire
+   * extension host (VS Code force-restarts it after enough unhandled rejections),
+   * taking down every other open panel/session, not just this one.
+   * @param {import('vscode').WebviewPanel} targetPanel
+   * @param {object} message
+   */
+  async function safePostMessage(targetPanel, message) {
+    try {
+      await targetPanel.webview.postMessage(message);
+    } catch {
+      // Panel was disposed mid-flight; nothing to recover, safe to ignore.
+    }
+  }
+
+  /**
    * Collects all extension state (commands, variables, terminal profiles, favorites,
    * auto-variables) and sends it to the webview as a single "state" message.
    * Defined as a closure inside activate() so it can access `context.workspaceState`
@@ -106,7 +126,7 @@ function activate(context) {
     const workspaceId = readWorkspaceId(workspaceFolder);
     const workspaceCommands = await readWorkspaceCommandsSection(workspaceFolder);
 
-    await targetPanel.webview.postMessage({
+    await safePostMessage(targetPanel, {
       type: "state",
       payload: {
         data,
@@ -394,8 +414,12 @@ function activate(context) {
         // Dedicated connection-watchdog heartbeat (media/connection-watchdog.js).
         // Dependency-free and independent of business message traffic, so it
         // always replies immediately regardless of any other in-flight work.
+        // Uses targetPanel (not the outer panel) and safePostMessage since this
+        // handler is bound to targetPanel specifically -- it must reply on the
+        // panel that sent the ping, and must never throw if that exact panel was
+        // disposed between receiving the ping and this reply going out.
         if (message.type === "ping") {
-          await panel.webview.postMessage({ type: "pong" });
+          await safePostMessage(targetPanel, { type: "pong" });
           return;
         }
 
